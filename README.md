@@ -4,6 +4,7 @@
 Запуск backend (необходимо установить python 3.7):
 ```
   cd backend/
+  pip install -r requirements.txt
   python manage.py
 ```
 Запуск frontend:
