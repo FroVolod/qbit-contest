@@ -1,5 +1,9 @@
 # qbit-contest
-БД и WAMP пока запускаются из проекта "wamp-demo"
+Запуск БД и WAMP:
+```
+  cd QBIT-CONTEST/
+  docker-compose up
+```
 
 Запуск backend (необходимо установить python 3.7):
 ```
