@@ -4,31 +4,58 @@ import os
 from autobahn.asyncio.component import Component
 from autobahn.asyncio.component import run
 
-comp = Component()
+from .constants import COURSES_DICT
 
-@comp.register('com.demo.test-python')
-async def test(*args, **kwargs):
-    print("Test handler has been called with args:", args, " Sleeping for 4 seconds...")
-    await asyncio.sleep(4)
-    print("Test handler has slept for 4 seconds.")
-    if args != ('data-from-python',):
-        print("Calling JavaScript...")
-        result = await comp._session.call('com.demo.test-js', 'data-from-python')
-        print("JavaScript returned: ", result)
-    return 42
+
+courses_titles = [title for title in COURSES_DICT.keys()]
+
+comp = Component()
 
 @comp.register('com.demo.create-contest')
 async def create_contest(*args, **kwargs):
-    print("Create contest called with args:", args, " Sleeping for 4 seconds...")
+    print(f'Create contest called with args:\n-- {args}\nSleeping for 4 seconds...')
     await asyncio.sleep(4)
-    print("Create contest handler has slept for 4 seconds.")
+    print('Create contest handler has slept for 4 seconds.')
     return 55
 
-# @comp.on_join
-# async def joined(session, details):
-#     print("We are connected!")
-#     print("Let's call JavaScript side")
-#     await session.call('com.demo.test-js', 'hi', 123)
+@comp.register('com.demo.get-titles-contests')
+async def get_titles_contests(course, lang):
+    print(f'Getting the titles of the contests with args:\n-- course: {course}\n-- language: {lang}\nSleeping for 4 seconds...')
+    await asyncio.sleep(4)
+    contests_titles = []
+    for title in COURSES_DICT.keys():
+        print('title: ', title)
+        try:
+            if COURSES_DICT[title]['course_title'][lang] == course:
+                try:
+                    contests = [contest for contest in COURSES_DICT[title]['contests']]
+                    print(f'contests: {contests}')
+                    contests_titles = [title['contest_title'][lang] for title in contests]
+                    print(contests_titles)
+                except Exception as error:
+                    print(f'# Error: contest title is missing in this language -- {error}')
+                    print('except-- contests_titles', contests_titles)
+                    return contests_titles
+                return contests_titles
+        except Exception as error:
+            print(f'# Error: contest title is missing in this language -- {error}')
+    print('no contests titles', contests_titles)
+    return contests_titles
+
+@comp.register('com.demo.get-titles-courses')
+async def get_titles_courses(language):
+    print(f'Getting the titles of the cuorses with language: {language}:\nSleeping for 4 seconds...')
+    await asyncio.sleep(4)
+    titles = []
+    for title in courses_titles:
+        try:
+            titles.append(COURSES_DICT[title]['course_title'][language])
+            print(f'Course_lang: {COURSES_DICT[title]["course_title"][language]}')
+        except Exception as error:
+            print(f'# Error: course title is missing in this language -- {error}')
+    print('OK')
+    print('titles: ', titles)
+    return titles
 
 
 class App:
@@ -48,9 +75,9 @@ class App:
                 component._check_native_endpoint
             )
         ]
-        component._realm = "demo"
+        component._realm = 'demo'
         #component._authentication = {
-        #    "ticket": {
+        #    'ticket': {
         #        'ticket': os.getenv('WAMP_DEMO_BACKEND_SECRET', 'backend'),
         #        'authid': 'demo-backend',
         #    },
@@ -58,9 +85,9 @@ class App:
         self.components.append(component)
 
     def run(self):
-        print("Running...")
+        print('Running...')
         run(self.components)
-        print("Bye.")
+        print('Bye.')
 
 
 def create_app():

@@ -1,4 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Col, Input } from 'reactstrap';
+
 
 import autobahn from "autobahn";
 
@@ -8,6 +10,7 @@ import ContestForm from '../components/contest-creation-form'
 class Index extends React.Component {
     state = {
         session: null,
+        language: 'ru',
     }
 
     componentDidMount() {
@@ -29,42 +32,51 @@ class Index extends React.Component {
             max_retry_delay: 10
           });
 
-        wamp.onopen = async session => {
-            await this.setState({session: session})
-            console.log('open: ', session)
+        // wamp.onopen = async session => {
+        //     await this.setState({session: session})
+        //     console.log('open: ', session)
 
-            function onevent1(args) {
-                console.log("Got event:", args);
-            }
-            await session.subscribe('com.demo.test-subscribe', onevent1);
-        }
+        //     function onevent1(args) {
+        //         console.log("Got event:", args);
+        //     }
+        //     await session.subscribe('com.demo.test-subscribe', onevent1);
+        // }
+
+        wamp.onopen = session => {
+            console.log('new session')
+            this.setState({session: session})
+            console.log('open: ', session)
+        };
 
         wamp.open();
     }
 
-    sendCall = async () => {
-        console.log('On click "Call <test-python>"')
-        const res = await this.state.session.call("com.demo.test-python", ['data-from-python',])
-        console.log('res: ', res)
+    setLanguage = (e) => {
+        this.setState({language: e.target.value})
+        console.log('language set ', e.target.value)
     }
-
-
-    // sendPublish = () => {
-    //     console.log('On click "Send publication"')
-    //     this.state.session.publish("com.demo.test-subscribe", ["qweqwe",])
-    // }
 
     render() {
         return (
         <div>
-            <ContestForm session={this.state.session} />
-            <button onClick={this.sendCall}>Call "test-python"</button>
-            {/* <button onClick={this.createContest}>Create contest</button> */}
+            <div>
+                <Col sm={1}>
+                    <Input onChange={this.setLanguage} type="select" name="select" id="lang">
+                        <option>ru</option>
+                        <option>ua</option>
+                        <option>en</option>
+                    </Input>
+                </Col>
+            </div>
+            <ContestForm state={this.state} />
 
             <style>
                 {`
                     body {
                         margin: 50px;
+                    }
+                    #lang {
+                        text-transform: uppercase;
                     }
                 `}
             </style>
