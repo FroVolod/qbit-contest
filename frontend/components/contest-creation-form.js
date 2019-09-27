@@ -6,6 +6,7 @@ export default class extends React.Component {
         course: '',
         contests: null,
         contest: '',
+        allowLanguages: null,
     }
 
     componentDidMount() {
@@ -24,6 +25,7 @@ export default class extends React.Component {
         this.getTitlesCourses()
         console.log('DidUpdate: Loading the titles of the courses ...')
         console.log('DidUpdate exit', this.state.courses, 'session: ', this.props.state.language)
+        this.getAllowLanguage()
     }
 
     createContest = async () => {
@@ -32,11 +34,22 @@ export default class extends React.Component {
         console.log('res: ', res)
     }
 
-    getTitlesContests = async (e) => {
-        console.log('Getting the titles of the contests')
-        const res = await this.props.state.session.call('com.demo.get-titles-contests', [e.target.value, this.props.state.language])
-        console.log('res: ', res)
-        this.setState({contests: res})
+    getAllowLanguage = async () => {
+        console.log('Getting allow language ...')
+        const allowLanguages = await this.props.state.session.call('com.demo.get-allow-language', [])
+        console.log('Allow language: ', allowLanguages)
+        this.setState({allowLanguages})
+    }
+
+    onCourseChange = async (e) => {
+        await this.getTitlesContests(e.target.value)
+    }
+
+    getTitlesContests = async (contestId) => {
+        console.log('Getting the titles of the contests with contestId: ', contestId)
+        const contests = await this.props.state.session.call('com.demo.get-titles-contests', [contestId, this.props.state.language])
+        console.log('contests_dicts: ', contests)
+        this.setState({contests})
         console.log('getTitlesContests: ', this.state.contests)
     }
 
@@ -49,11 +62,8 @@ export default class extends React.Component {
         console.log('Getting the titles of the courses')
         const courses = await this.props.state.session.call('com.demo.get-titles-courses', [this.props.state.language,])
         console.log('courses: ', courses)
-        const contests = await this.props.state.session.call('com.demo.get-titles-contests', [courses[0], this.props.state.language])
-        console.log('contests: ', contests)
-        this.setState ({courses: courses, contests: contests})
-        console.log('### courses: ', this.state.courses)
-        console.log('### contests: ', this.state.contests)
+        this.getTitlesContests(courses[0].course_id)
+        this.setState ({courses})
     }
 
     render() {
@@ -73,9 +83,9 @@ export default class extends React.Component {
                 <FormGroup row>
                     <Label sm={2} for="title">Название курса</Label>
                     <Col sm={6}>
-                        <Input  onChange={this.getTitlesContests} type="select" name="select" id="contest_title">                        
+                        <Input  onChange={this.onCourseChange} type="select" name="select" id="contest_title">                        
                             {this.state.courses === null ? null : this.state.courses.map((course) => (
-                                <option key={course}>{course}</option>
+                                <option key={course.course_id} value={course.course_id}>{course.course_title}</option>
                             ))}
                         </Input>
                     </Col>
@@ -88,7 +98,7 @@ export default class extends React.Component {
                                 <Col sm={6}>
                                     <Input onChange={this.setContest} type="select" name="select" id="contest_title">
                                         {this.state.contests === null ? null : this.state.contests.map((contest) => (
-                                            <option key={contest}>{contest}</option>
+                                            <option key={contest.contest_title}>{contest.contest_title}</option>
                                         ))}
                                     </Input>
                                 </Col>
@@ -98,11 +108,9 @@ export default class extends React.Component {
                     <Label sm={2} for="allow_languages">Разрешенные языки программирования</Label>
                     <Col sm={6}>
                         <Input type="select" name="selectMulti" id="allow_languages" multiple>
-                            <option>1</option>
-                            <option>2</option>
-                            <option>3</option>
-                            <option>4</option>
-                            <option>5</option>
+                            {this.state.allowLanguages === null ? null : this.state.allowLanguages.map((lang) => (
+                                <option selected key={lang[1]}>{lang[1]}</option>
+                            ))}
                         </Input>
                     </Col>
                 </FormGroup>
