@@ -12,13 +12,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@y0c/react-datepicker": "^1.0.1",
     "@zeit/next-css": "^1.0.1",
     "autobahn": "^19.9.2",
     "bootstrap": "^4.3.1",
     "next": "^9.0.6",
+    "rc-calendar": "^9.15.6",
+    "rc-datepicker": "^5.0.14",
     "react": "^16.9.0",
     "react-bootstrap": "^1.0.0-beta.12",
+    "react-datetime": "^2.16.3",
     "react-dom": "^16.9.0",
+    "react-picky-date-time": "^1.3.2",
     "reactstrap": "^8.0.1"
   }
 }
