@@ -16,10 +16,10 @@ async def create_contest(*args, **kwargs):
     print('Create contest handler has slept for 4 seconds.')
     return 55
 
-@comp.register('com.demo.get-titles-contests')
+@comp.register('com.demo.get-contests-dictionaries')
 async def get_titles_contests(course_id, lang):
     print(f'Getting the titles of the contests with args:\n-- course: {course_id}\n-- language: {lang}\nSleeping for 4 seconds...')
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     contests_dicts = []
     for contest in COURSES_DICT[course_id]['contests']:
         try:
@@ -42,7 +42,7 @@ async def get_titles_contests(course_id, lang):
 @comp.register('com.demo.get-titles-courses')
 async def get_titles_courses(lang):
     print(f'Getting the titles of the cuorses with language: {lang}:\nSleeping for 4 seconds...')
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     titles = []
     for course_id, course in COURSES_DICT.items():
         try:
