@@ -13,18 +13,30 @@ import { now } from 'moment';
 
 export default class extends React.Component {
     state = {
+        author: null,
+        contestType: 'otbor',
+        courseTitle: null,
+        contestTitle: null,
+        problems: null,
+        allowLanguages: null,
+        startTime: null,
+        contestParticipants: null,
+        options: 4,
+        data: null,
+        info: null,
+        date: new Date(),
         courses: null,
         contestsDict: null,
-        allowLanguages: null,
-        problems: null,
-        date: new Date(),
-        contestTitle: 'nulqwel',
+        excludedProblems: [],
+        excludedAllowLanguages: [],
     }
 
     componentDidMount() {
         console.log('DIDMount open')
         if (!this.props.state.session) return
         this.getTitlesCourses()
+            .then((courses) => console.log('DIDMount getTitlesCourses response: ', courses))
+            .catch((e) => console.log('DIDMount getTitlesCourses error:', e)) 
     }
 
     componentDidUpdate(nextProps) {
@@ -34,16 +46,35 @@ export default class extends React.Component {
         console.log('this.props: ', this.props)
         console.log('nextProps: ',nextProps)
         console.log('************** state: ', this.state)
-        if (this.state.courses && this.props===nextProps) return
+        if (this.state.courses && this.props===nextProps) {
+            console.log('DidUpdate: no changes')
+            return
+        }
         this.getTitlesCourses()
+            .then((courses) => {
+                console.log('DidUpdate getTitlesCourses response: ', courses)
+                if (courses === this.state.courses) return
+                this.setState({courses})
+            })
+            .catch((e) => console.log('DidUpdate getTitlesCourses error:', e))
         console.log('DidUpdate: Loading the titles of the courses ...')
         console.log('DidUpdate exit', this.state.courses, 'session: ', this.props.state.language)
+        if (this.state.allowLanguages) return
         this.getAllowLanguage()
-        
+            .then((allowLanguages) => {
+                console.log('DidUpdate getAllowLanguage response: ', allowLanguages)
+                if (this.state.allowLanguages === allowLanguages) return
+                this.setState({allowLanguages})
+            })
+            .catch((e) => console.log('DidUpdate getAllowLanguage error:', e))
     }
 
     createContest = async () => {
         console.log('On click "Create contest"')
+        let problems = this.state.problems.filter(x => !this.state.excludedProblems.includes(x));
+        console.log('createContest problems: ', problems)
+        let allowLanguages = this.state.allowLanguages.filter(x => !this.state.excludedAllowLanguages.includes(x));
+        console.log('createContest allowLanguages:', allowLanguages)
         const res = await this.props.state.session.call('com.demo.create-contest', ['create-contest',])
         console.log('res: ', res)
     }
@@ -52,33 +83,71 @@ export default class extends React.Component {
         console.log('Getting allow language ...')
         const allowLanguages = await this.props.state.session.call('com.demo.get-allow-language', [])
         console.log('Allow language: ', allowLanguages)
-        this.setState({allowLanguages})
+        return allowLanguages
     }
 
-    onCourseChange = async (e) => {
-        await this.getContestsDict(e.target.value)
+    onCourseChange = (e) => {
+        this.getContestsDict(e.target.value)
     }
 
     getContestsDict = async (courseID) => {
         console.log('Getting the titles of the contests with courseID: ', courseID)
         const contestsDict = await this.props.state.session.call('com.demo.get-contests-dictionaries', [courseID, this.props.state.language])
         console.log('contestsDicts: ', contestsDict)
+        if (contestsDict && contestsDict === this.state.contestsDict) return
         this.setState({
             contestsDict,
             courseID,
             problems: contestsDict[0]['problems'],
+            contestTitle: contestsDict[0]['contest_title'],
+            courseTitle: contestsDict[0]['course_title'],
         })
     }
 
-    getTitlesProblems = async (contest) => {
+    getTitlesProblems = (contest) => {
         console.log('Getting the problems of the contest: ', contest)
         console.log('*** contestsDict: ', this.state.contestsDict)
         const problems = this.state.contestsDict.find(item => item.contest_title == contest).problems
         console.log('*** problems', problems)
-        this.setState({problems})
+        this.setState({
+            problems,
+            contestTitle: contest,
+        })
     }
 
-    setContest = async (e) => {
+    onChangeProblemsList = (e) => {
+        let excludedProblems = this.state.excludedProblems;
+        console.log('onChangeProblemsList: ', e.target.id, e.target.checked)
+        if (!e.target.checked) {
+            excludedProblems.push(e.target.id)
+        }
+        else {
+            let value = excludedProblems.indexOf(e.target.id)
+            if (value !== -1) {
+                excludedProblems.splice(value, 1)
+            }
+        }
+        console.log('onChangeProblemsList excludedProblems: ', excludedProblems)
+        this.setState({excludedProblems})
+    }
+
+    onChangeAllowLanguagesList = (e) => {
+        console.log('onChangeAllowLanguagesList: ', e.target.id, e.target.checked)
+        let excludedAllowLanguages = this.state.excludedAllowLanguages;
+        if (!e.target.checked) {
+            excludedAllowLanguages.push(e.target.id)
+        }
+        else {
+            let value = excludedAllowLanguages.indexOf(e.target.id);
+            if (value !== -1) {
+                excludedAllowLanguages.splice(value, 1)
+            }
+        }
+        console.log('onChangeAllowLanguagesList excludedAllowLanguages: ', excludedAllowLanguages)
+        this.setState({excludedAllowLanguages})
+    }
+
+    setContest = (e) => {
         console.log('Setting contest ...', e.target.value)
         this.getTitlesProblems(e.target.value)
     }
@@ -87,9 +156,10 @@ export default class extends React.Component {
         console.log('getTitlesCourses:  Loading the titles of the courses ...')
         console.log('Getting the titles of the courses')
         const courses = await this.props.state.session.call('com.demo.get-titles-courses', [this.props.state.language,])
-        console.log('courses: ', courses)
+        console.log('getTitlesCourses *courses: ', courses)
         this.getContestsDict(courses[0].course_id)
-        this.setState ({courses})
+        // this.setState ({courses})
+        return courses
     }
 
     onChangeDate = (date) => {
@@ -99,28 +169,13 @@ export default class extends React.Component {
 
     setContestType = (e) => {
         console.log('setContestType: ', e.target.value)
-        this.setState({contestTitle: e.target.value}) 
+        this.setState({contestType: e.target.value}) 
     }
 
     render() {
         if (!this.props.state.session) return null
-        console.log('contest creation form (session):', this.props.state.session)
+        console.log('** render() ** contest creation form (session):', this.props.state.session)
         console.log('&&& render ', this.state.courses, this.props.state.language)
-
-        const contestInfo = {
-            authorId: null,
-            courseTitle: null,
-            contestTitle: null,
-            problems: [],
-            allowLanguages: null,
-            startTime: null,
-            contestParticipants: null,
-            options: 4,
-            data: null,
-            info: null,
-            contestType: null,
-        };
-        
 
         return (
             <Form>
@@ -173,49 +228,35 @@ export default class extends React.Component {
                     </FormGroup>
                 }
                 {this.state.problems === null ? null :
-                //     <FormGroup row>
-                //         <Label sm={2} for="problems">Задачи турнира</Label>
-                //         <Col sm={6}>
-                //             <Input type="select" name="selectMulti" id="problems" multiple>
-                //                 {this.state.problems === null ? null : this.state.problems.map((problem) => (
-                //                     <option selected key={problem}>{problem}</option>
-                //                 ))}
-                //             </Input>
-                //         </Col>
-                //     </FormGroup>
-                // }
-                <FormGroup row>
-                    <Label sm={2} for="problems">Задачи турнира</Label>
-                    <Col sm={6}>
-                        {this.state.problems === null ? null : this.state.problems.map((problem) => (
-                            <InputGroup>
-                                <InputGroupAddon addonType="prepend">
-                                <InputGroupText>
-                                    <Input addon type="checkbox" checked />
-                                </InputGroupText>
-                                </InputGroupAddon>
-                                <a href="" target="_blank"><Input placeholder={problem}></Input></a>
-                            </InputGroup>
-                        ))}
-                    </Col>
-                </FormGroup>
+                    <FormGroup row>
+                        
+                        <Label sm={2} for="problems">Задачи турнира</Label>
+                        
+                        <Col sm={6}>
+                            {this.state.problems.map((problem) => (
+                                <InputGroup key={problem}>
+                                    <InputGroupAddon addonType="prepend">
+                                    <InputGroupText>
+                                        <Input id={problem} onChange={this.onChangeProblemsList} addon type="checkbox" defaultChecked />
+                                    </InputGroupText>
+                                    </InputGroupAddon>
+                                    <a href="" target="_blank"><Input placeholder={problem}></Input></a>
+                                </InputGroup>
+                            ))}
+                        </Col>
+                    </FormGroup>
                 }
                 <FormGroup row>
                     <Label sm={2} for="allow_languages">Разрешенные языки программирования</Label>
                     <Col sm={6}>
-                        {/* <Input type="select" name="selectMulti" id="allow_languages" multiple>
-                            {this.state.allowLanguages === null ? null : this.state.allowLanguages.map((lang) => (
-                                <option selected key={lang[1]}>{lang[1]}</option>
-                            ))}
-                        </Input> */}
                         {this.state.allowLanguages === null ? null : this.state.allowLanguages.map((lang) => (
-                            <InputGroup>
+                            <InputGroup key={lang}>
                                 <InputGroupAddon addonType="prepend">
                                 <InputGroupText>
-                                    <Input addon type="checkbox" checked />
+                                    <Input id={lang} onChange={this.onChangeAllowLanguagesList} addon type="checkbox" defaultChecked />
                                 </InputGroupText>
                                 </InputGroupAddon>
-                                <Input placeholder={lang[1]}></Input>
+                                <Input placeholder={lang}></Input>
                             </InputGroup>
                         ))}
                     </Col>
@@ -250,12 +291,6 @@ export default class extends React.Component {
                     </Col>
                 </FormGroup>
                 <FormGroup row>
-                    <Label sm={2} for="options">options</Label>
-                    <Col sm={6}>
-                        <Input type="textarea" name="text" id="options" />
-                    </Col>
-                </FormGroup>
-                <FormGroup row>
                     <Label sm={2} for="data">data</Label>
                     <Col sm={6}>
                         <Input type="textarea" name="text" id="data" />
@@ -279,6 +314,9 @@ export default class extends React.Component {
                             text-align: center;
                             margin-top: 50px;
                             margin-bottom: 50px;
+                        }
+                        a input {
+                            cursor: pointer;
                         }
                     `} 
                 </style>

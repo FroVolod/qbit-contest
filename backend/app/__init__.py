@@ -23,7 +23,7 @@ async def get_titles_contests(course_id, lang):
     contests_dicts = []
     for contest in COURSES_DICT[course_id]['contests']:
         try:
-            contest_dict = {}
+            contest_dict = {'course_title': COURSES_DICT[course_id]['course_title'][lang]}
             print(f'contest: {contest}')
             for key, value in contest.items():
                 if type(value) is dict:
@@ -56,7 +56,7 @@ async def get_titles_courses(lang):
 
 @comp.register('com.demo.get-allow-language')
 async def get_allow_language():
-    return ALLOW_LANGUAGE
+    return [x[1] for x in ALLOW_LANGUAGE]
 
 
 class App:
