@@ -397,15 +397,15 @@ export default class extends React.Component {
           </Col>
         </FormGroup>
         <FormGroup row>
-          <Label sm={2} for="title">
+          <Label sm={2} for="courseTitle">
             Название курса
           </Label>
           <Col sm={6}>
             <Input
               onChange={this.onCourseChange}
               type="select"
-              name="selectCours"
-              id="contest_title"
+              name="selectCourse"
+              id="courseTitle"
             >
               {!this.state.courses
                 ? null
@@ -425,7 +425,7 @@ export default class extends React.Component {
 
         {!this.state.courses ? null : (
           <FormGroup row>
-            <Label sm={2} for="contest_title">
+            <Label sm={2} for="contestTitle">
               Название турнира
             </Label>
             <Col sm={6}>
@@ -433,7 +433,7 @@ export default class extends React.Component {
                 onChange={this.setContest}
                 type="select"
                 name="select"
-                id="contest_title"
+                id="contestTitle"
               >
                 {!this.state.contestsDict
                   ? null
@@ -466,7 +466,7 @@ export default class extends React.Component {
                     </InputGroupText>
                   </InputGroupAddon>
                   <a href="" target="_blank">
-                    <Input placeholder={problem}></Input>
+                    <Input defaultValue={problem}></Input>
                   </a>
                 </InputGroup>
               ))}
@@ -478,7 +478,7 @@ export default class extends React.Component {
             Разрешенные языки программирования
           </Label>
           <Col sm={6}>
-            <InputGroup key={lang}>
+            <InputGroup>
               <InputGroupAddon addonType="prepend">
                 <InputGroupText>
                   <Input
@@ -496,7 +496,7 @@ export default class extends React.Component {
             {!this.state.allowLanguages
               ? null
               : this.state.allowLanguages.map(lang => (
-                  <InputGroup key={lang}>
+                  <InputGroup key={lang[0]}>
                     <InputGroupAddon addonType="prepend">
                       <InputGroupText>
                         <Input
@@ -507,7 +507,7 @@ export default class extends React.Component {
                           checked={this.state.programmingLanguagesEnabled[lang]}
                         />
                       </InputGroupText>
-                      <InputGroupText>{lang}</InputGroupText>
+                      <InputGroupText>{lang[1]}</InputGroupText>
                     </InputGroupAddon>
                   </InputGroup>
                 ))}

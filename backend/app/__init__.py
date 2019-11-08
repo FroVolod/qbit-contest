@@ -72,7 +72,7 @@ async def get_titles_courses(lang):
 @comp.register('com.demo.get-allow-language')
 async def get_allow_language():
     await asyncio.sleep(2)
-    return [x[1] for x in ALLOW_LANGUAGE]
+    return ALLOW_LANGUAGE
 
 
 class App:
