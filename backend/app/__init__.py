@@ -5,6 +5,7 @@ from autobahn.asyncio.component import Component
 from autobahn.asyncio.component import run
 
 from .constants import COURSES_DICT, ALLOW_LANGUAGE
+from .tables_db import Groups, Users, Contests, session
 
 
 comp = Component()
@@ -12,12 +13,26 @@ comp = Component()
 @comp.register('com.demo.create-contest')
 async def create_contest(*args, **kwargs):
     print(f'Create contest called with args:\n-- {args}\nSleeping for 4 seconds...')
-    await asyncio.sleep(1)
+    await asyncio.sleep(2)
     print('Create contest handler has slept for 4 seconds.')
     return 55
 
+@comp.register('com.demo.get-participants-groups')
+async def get_contest_participants_groups(user_id):
+    print('Getting the participants groups with user:\n')
+    print(session)
+    print(dir(session))
+    print(session.__dict__)
+    print(session.is_active)
+    user = session.query(Users).filter(Users.user_id==int(user_id)).first()
+    print(f'-- {user.nickname}')
+    await asyncio.sleep(2)
+    groups = [q.group_name for q in session.query(Groups).filter(Groups.teacher_id==user.user_id).all()]
+    print(f'groups:\n-- {groups}')
+    return groups
+
 @comp.register('com.demo.get-contests-dictionaries')
-async def get_titles_contests(course_id, lang):
+async def get_contests_dictionaries(course_id, lang):
     print(f'Getting the titles of the contests with args:\n-- course: {course_id}\n-- language: {lang}\nSleeping for 4 seconds...')
     await asyncio.sleep(2)
     contests_dicts = []
@@ -56,6 +71,7 @@ async def get_titles_courses(lang):
 
 @comp.register('com.demo.get-allow-language')
 async def get_allow_language():
+    await asyncio.sleep(2)
     return [x[1] for x in ALLOW_LANGUAGE]
 
 
@@ -70,7 +86,7 @@ class App:
                 0,
                 {
                     'type': 'websocket',
-                    'url': os.getenv('WAMP_DEMO_URL', 'ws://localhost:8080/ws'),
+                    'url': os.getenv('WAMP_DEMO_URL', 'ws://127.0.0.1:8080/ws'),
                     'serializers': ['json'],
                 },
                 component._check_native_endpoint
