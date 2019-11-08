@@ -255,23 +255,20 @@ export default class extends React.Component {
   };
 
   onChangeProblemsList = e => {
-    // let excludedProblems = this.state.excludedProblems;
     console.log("onChangeProblemsList: ", e.target.id, e.target.checked);
     const checked = e.target.checked;
     const id = e.target.id;
     this.setState(state => ({
       problemsEnabled: { ...state.problemsEnabled, [id]: checked }
     }));
-    // if (!e.target.checked) {
-    //   excludedProblems.push(e.target.id);
-    // } else {
-    //   let value = excludedProblems.indexOf(e.target.id);
-    //   if (value !== -1) {
-    //     excludedProblems.splice(value, 1);
-    //   }
-    // }
-    // console.log("onChangeProblemsList excludedProblems: ", excludedProblems);
-    // this.setState({ excludedProblems });
+  };
+
+  onToggleAllProblems = e => {
+    const problemsEnabled = {};
+    for (const key of this.state.problems) {
+      problemsEnabled[key] = e.target.checked;
+    }
+    this.setState({ problemsEnabled });
   };
 
   onToggleAllProgrammingLanguages = e => {
@@ -315,7 +312,6 @@ export default class extends React.Component {
     );
     console.log("getTitlesCourses *courses: ", courses);
     this.getContestsDict(courses[0].course_id);
-    // this.setState ({courses})
     return courses;
   };
 
@@ -464,6 +460,21 @@ export default class extends React.Component {
               Задачи турнира
             </Label>
             <Col sm={6}>
+              <InputGroup>
+                <InputGroupAddon addonType="prepend">
+                  <InputGroupText>
+                    <Input
+                      onChange={this.onToggleAllProblems}
+                      addon
+                      type="checkbox"
+                      checked={Object.values(this.state.problemsEnabled).every(
+                        x => x
+                      )}
+                    />
+                  </InputGroupText>
+                  <InputGroupText>Выбрать все</InputGroupText>
+                </InputGroupAddon>
+              </InputGroup>
               {this.state.problems.map(problem => (
                 <InputGroup key={problem}>
                   <InputGroupAddon addonType="prepend">
