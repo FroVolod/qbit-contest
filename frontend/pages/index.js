@@ -17,7 +17,7 @@ class Index extends React.Component {
         console.log('Hi')
 
         const wamp = new autobahn.Connection({
-            url: "ws://localhost:8080/ws",
+            url: "ws://127.0.0.1:8080/ws",
             realm: "demo",
             //authmethods: ["ticket"],
             //authid: "demo-frontend",
