@@ -39,6 +39,7 @@ export default class extends React.Component {
     contestsDict: null,
     excludedProblems: [],
     programmingLanguagesEnabled: {},
+    problemsEnabled: {},
     participantsGroups: [],
     showParticipantsGroupsSpinner: true
   };
@@ -134,7 +135,7 @@ export default class extends React.Component {
   createContest = async () => {
     console.log('On click "Create contest"');
     let problems = this.state.problems.filter(
-      x => !this.state.excludedProblems.includes(x)
+      x => this.state.problemsEnabled[x]
     );
     console.log("createContest problems: ", problems);
     let allowLanguages = this.state.allowLanguages.filter(
@@ -225,11 +226,11 @@ export default class extends React.Component {
     this.setState({
       contestsDict,
       courseID,
-      problems: contestsDict[0]["problems"],
       contestTitle: contestsDict[0]["contest_title"],
       courseTitle: contestsDict[0]["course_title"],
       info: contestsDict[0]["info"]
     });
+    this.getTitlesProblemsAndInfo(contestsDict[0]["contest_title"]);
   };
 
   getTitlesProblemsAndInfo = contest => {
@@ -238,28 +239,39 @@ export default class extends React.Component {
     const item = this.state.contestsDict.find(
       item => item.contest_title == contest
     );
+    const problemsEnabled = {};
+    const problems = item.problems;
+    for (const problem of problems) {
+      problemsEnabled[problem] = true;
+    }
     console.log("*** problems", item.problems);
     console.log("*** info ", item.info);
     this.setState({
-      problems: item.problems,
+      problems,
+      problemsEnabled,
       contestTitle: contest,
       info: item.info
     });
   };
 
   onChangeProblemsList = e => {
-    let excludedProblems = this.state.excludedProblems;
+    // let excludedProblems = this.state.excludedProblems;
     console.log("onChangeProblemsList: ", e.target.id, e.target.checked);
-    if (!e.target.checked) {
-      excludedProblems.push(e.target.id);
-    } else {
-      let value = excludedProblems.indexOf(e.target.id);
-      if (value !== -1) {
-        excludedProblems.splice(value, 1);
-      }
-    }
-    console.log("onChangeProblemsList excludedProblems: ", excludedProblems);
-    this.setState({ excludedProblems });
+    const checked = e.target.checked;
+    const id = e.target.id;
+    this.setState(state => ({
+      problemsEnabled: { ...state.problemsEnabled, [id]: checked }
+    }));
+    // if (!e.target.checked) {
+    //   excludedProblems.push(e.target.id);
+    // } else {
+    //   let value = excludedProblems.indexOf(e.target.id);
+    //   if (value !== -1) {
+    //     excludedProblems.splice(value, 1);
+    //   }
+    // }
+    // console.log("onChangeProblemsList excludedProblems: ", excludedProblems);
+    // this.setState({ excludedProblems });
   };
 
   onToggleAllProgrammingLanguages = e => {
@@ -461,7 +473,7 @@ export default class extends React.Component {
                         onChange={this.onChangeProblemsList}
                         addon
                         type="checkbox"
-                        defaultChecked
+                        checked={this.state.problemsEnabled[problem]}
                       />
                     </InputGroupText>
                   </InputGroupAddon>
