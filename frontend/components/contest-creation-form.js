@@ -5,7 +5,6 @@ import {
   FormGroup,
   Label,
   Input,
-  Text,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
@@ -37,11 +36,17 @@ export default class extends React.Component {
     date: new Date(),
     courses: null,
     contestsDict: null,
-    excludedProblems: [],
     programmingLanguagesEnabled: {},
     problemsEnabled: {},
     participantsGroups: [],
-    showParticipantsGroupsSpinner: true
+    showParticipantsGroupsSpinner: true,
+    contestDuration: {
+      minutes: { 1: "минутах" },
+      hours: { 60: "часах" },
+      days: { 1440: "днях" }
+    },
+    periodDuration: "minutes",
+    timeDurationMinutes: null
   };
 
   componentDidMount() {
@@ -330,6 +335,16 @@ export default class extends React.Component {
     this.setState({ info: e.target.value });
   };
 
+  setContestDuration = e => {
+    console.log("setContestDuration: ", e.target.value);
+    const k = Number(
+      Object.keys(this.state.contestDuration[this.state.periodDuration])
+    );
+    this.setState({
+      timeDurationMinutes: e.target.value * k
+    });
+  };
+
   render() {
     if (!this.props.state.session) return null;
     console.log(
@@ -575,10 +590,34 @@ export default class extends React.Component {
         </FormGroup>
         <FormGroup row>
           <Label sm={2} for="data">
-            data
+            Длительность турнира
           </Label>
           <Col sm={6}>
-            <Input type="textarea" name="text" id="data" />
+            <InputGroup>
+              <InputGroupAddon className="col-sm-12" addonType="append">
+                <InputGroupText className="col-sm-4">
+                  <Input
+                    onBlur={this.setContestDuration}
+                    placeholder="Введите длительность турнира в"
+                  />
+                </InputGroupText>
+                <InputGroupText>
+                  <Input
+                    onChange={e =>
+                      this.setState({ periodDuration: e.target.value })
+                    }
+                    type="select"
+                    name="selectData"
+                    id="data"
+                    addon
+                  >
+                    {Object.entries(this.state.contestDuration).map(item => (
+                      <option value={item[0]}>{Object.values(item[1])}</option>
+                    ))}
+                  </Input>
+                </InputGroupText>
+              </InputGroupAddon>
+            </InputGroup>
           </Col>
         </FormGroup>
         <FormGroup check row>
