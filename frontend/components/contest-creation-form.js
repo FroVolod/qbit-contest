@@ -41,9 +41,9 @@ export default class extends React.Component {
     participantsGroups: [],
     showParticipantsGroupsSpinner: true,
     contestDuration: {
-      minutes: [1, "минутах"],
-      hours: [60, "часах"],
-      days: [1440, "днях"]
+      minutes: [1, "минуты", "минутах"],
+      hours: [60, "часы", "часах"],
+      days: [1440, "дни", "днях"]
     },
     periodDuration: "minutes",
     timeDurationMinutes: null
@@ -596,7 +596,10 @@ export default class extends React.Component {
                 <InputGroupText className="col-sm-4">
                   <Input
                     onBlur={this.setContestDuration}
-                    placeholder="Введите длительность турнира в"
+                    placeholder={
+                      "Длительность турнира в " +
+                      this.state.contestDuration[this.state.periodDuration][2]
+                    }
                   />
                 </InputGroupText>
                 <InputGroupText>
