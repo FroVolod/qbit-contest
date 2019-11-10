@@ -41,9 +41,9 @@ export default class extends React.Component {
     participantsGroups: [],
     showParticipantsGroupsSpinner: true,
     contestDuration: {
-      minutes: { 1: "минутах" },
-      hours: { 60: "часах" },
-      days: { 1440: "днях" }
+      minutes: [1, "минутах"],
+      hours: [60, "часах"],
+      days: [1440, "днях"]
     },
     periodDuration: "minutes",
     timeDurationMinutes: null
@@ -337,9 +337,7 @@ export default class extends React.Component {
 
   setContestDuration = e => {
     console.log("setContestDuration: ", e.target.value);
-    const k = Number(
-      Object.keys(this.state.contestDuration[this.state.periodDuration])
-    );
+    const k = this.state.contestDuration[this.state.periodDuration][0];
     this.setState({
       timeDurationMinutes: e.target.value * k
     });
@@ -612,7 +610,7 @@ export default class extends React.Component {
                     addon
                   >
                     {Object.entries(this.state.contestDuration).map(item => (
-                      <option value={item[0]}>{Object.values(item[1])}</option>
+                      <option value={item[0]}>{item[1][1]}</option>
                     ))}
                   </Input>
                 </InputGroupText>
