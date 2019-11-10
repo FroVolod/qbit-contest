@@ -11,14 +11,9 @@ import {
   Spinner
 } from "reactstrap";
 
-import "moment/locale/uk"; // or 'rc-datepicker/node_modules/moment/locale/fr.js' if you don't have it in your node_modules folder
-import { DatePickerInput } from "rc-datepicker";
-import "rc-datepicker/lib/style.css";
+import DatePicker from "react-datepicker"; //https://github.com/Hacker0x01/react-datepicker
+import "react-datepicker/dist/react-datepicker.css";
 
-import Datetime from "react-datetime";
-
-import Calend from "rc-calendar";
-import { now } from "moment";
 
 export default class extends React.Component {
   state = {
@@ -343,6 +338,11 @@ export default class extends React.Component {
     });
   };
 
+  setPeriodDuration = e => {
+    document.getElementById("contestDuration").value = null;
+    this.setState({ periodDuration: e.target.value });
+  }
+  
   render() {
     if (!this.props.state.session) return null;
     console.log(
@@ -567,22 +567,13 @@ export default class extends React.Component {
           <Label sm={2} for="start_time">
             Начало турнира
           </Label>
-          <Col sm={3}>
-            {/* <Input type="textarea" name="text" id="start_time" /> */}
-            <DatePickerInput
-              onChange={this.onChangeDate}
-              value={this.state.date}
-              className="my-custom-datepicker-component"
-              // {...anyReactInputProps}
-            />
-          </Col>
-          <Col sm={3}>
-            {/* <Input type="textarea" name="text" id="start_time" /> */}
-            <DatePickerInput
-              // onChange={onChange}
-              // value={date}
-              className="my-custom-datepicker-component"
-              // {...anyReactInputProps}
+          <Col>
+            <DatePicker
+              selected={this.state.date}
+              onChange={e => this.setState({date: e})}
+              showTimeSelect
+              dateFormat="dd / MM / yyyy   H:mm "
+              timeIntervals={15}
             />
           </Col>
         </FormGroup>
@@ -595,6 +586,7 @@ export default class extends React.Component {
               <InputGroupAddon className="col-sm-12" addonType="append">
                 <InputGroupText className="col-sm-4">
                   <Input
+                    id="contestDuration"
                     onBlur={this.setContestDuration}
                     placeholder={
                       "Длительность турнира в " +
@@ -604,9 +596,7 @@ export default class extends React.Component {
                 </InputGroupText>
                 <InputGroupText>
                   <Input
-                    onChange={e =>
-                      this.setState({ periodDuration: e.target.value })
-                    }
+                    onChange={this.setPeriodDuration}
                     type="select"
                     name="selectData"
                     id="data"
