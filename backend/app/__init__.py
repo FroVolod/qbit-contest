@@ -11,8 +11,21 @@ from .tables_db import Groups, Users, Contests, session
 comp = Component()
 
 @comp.register('com.demo.create-contest')
-async def create_contest(*args, **kwargs):
-    print(f'Create contest called with args:\n-- {args}\nSleeping for 4 seconds...')
+async def create_contest(out_contests_dict):
+    print(f'Create contest called with args:\n-- {out_contests_dict}\nSleeping for 4 seconds...')
+    duration_time = str(out_contests_dict['timeDurationSec'])
+    new_contest = Contests(
+        title = out_contests_dict['contestTitle'],
+        contest_type = out_contests_dict['contestType'],
+        start_time = out_contests_dict['startTime'],
+        options =  out_contests_dict['options'],
+        data = 'a:2:{s:13:"duration_time";i:' + duration_time + ';s:13:"absolute_time";i:0;}',
+        info = out_contests_dict['info'],
+        author_id = out_contests_dict['author'],
+        allow_languages = out_contests_dict['allowLanguages'],
+    )
+    session.add(new_contest)
+    session.commit()
     await asyncio.sleep(2)
     print('Create contest handler has slept for 4 seconds.')
     return 55

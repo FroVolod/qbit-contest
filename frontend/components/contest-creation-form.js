@@ -14,7 +14,6 @@ import {
 import DatePicker from "react-datepicker"; //https://github.com/Hacker0x01/react-datepicker
 import "react-datepicker/dist/react-datepicker.css";
 
-
 export default class extends React.Component {
   state = {
     author: 1007,
@@ -36,12 +35,12 @@ export default class extends React.Component {
     participantsGroups: [],
     showParticipantsGroupsSpinner: true,
     contestDuration: {
-      minutes: [1, "минуты", "минутах"],
-      hours: [60, "часы", "часах"],
-      days: [1440, "дни", "днях"]
+      minutes: [60, "минуты", "минутах"],
+      hours: [3600, "часы", "часах"],
+      days: [86400, "дни", "днях"]
     },
     periodDuration: "minutes",
-    timeDurationMinutes: null
+    timeDurationSec: null
   };
 
   componentDidMount() {
@@ -138,12 +137,26 @@ export default class extends React.Component {
       x => this.state.problemsEnabled[x]
     );
     console.log("createContest problems: ", problems);
-    let allowLanguages = this.state.allowLanguages.filter(
-      lang => this.state.programmingLanguagesEnabled[lang]
-    );
+    let allowLanguages = this.state.allowLanguages
+      .filter(lang => this.state.programmingLanguagesEnabled[lang])
+      .map(lang => lang[0])
+      .join(" ");
     console.log("createContest allowLanguages:", allowLanguages);
+    const outContestsDict = {
+      author: this.state.author,
+      contestType: this.state.contestType,
+      courseTitle: this.state.courseTitle,
+      contestTitle: this.state.contestTitle,
+      problems,
+      allowLanguages,
+      startTime: this.state.date.getTime() / 1000,
+      contestParticipantsGroups: this.state.contestParticipantsGroups,
+      options: "4",
+      info: this.state.info,
+      timeDurationSec: this.state.timeDurationSec
+    };
     const res = await this.props.state.session.call("com.demo.create-contest", [
-      "create-contest"
+      outContestsDict
     ]);
     console.log("res: ", res);
   };
@@ -334,15 +347,15 @@ export default class extends React.Component {
     console.log("setContestDuration: ", e.target.value);
     const k = this.state.contestDuration[this.state.periodDuration][0];
     this.setState({
-      timeDurationMinutes: e.target.value * k
+      timeDurationSec: e.target.value * k
     });
   };
 
   setPeriodDuration = e => {
     document.getElementById("contestDuration").value = null;
     this.setState({ periodDuration: e.target.value });
-  }
-  
+  };
+
   render() {
     if (!this.props.state.session) return null;
     console.log(
@@ -570,7 +583,7 @@ export default class extends React.Component {
           <Col>
             <DatePicker
               selected={this.state.date}
-              onChange={e => this.setState({date: e})}
+              onChange={e => this.setState({ date: e })}
               showTimeSelect
               dateFormat="dd / MM / yyyy   H:mm "
               timeIntervals={15}
