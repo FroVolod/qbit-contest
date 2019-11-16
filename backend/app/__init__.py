@@ -78,7 +78,7 @@ async def get_contest_participants_groups(user_id):
     print(f"-- {user.nickname}")
     await asyncio.sleep(2)
     groups = [
-        q.group_name
+        (q.group_id, q.group_name)
         for q in session.query(Groups).filter(Groups.teacher_id == user.user_id).all()
     ]
     print(f"groups:\n-- {groups}")
