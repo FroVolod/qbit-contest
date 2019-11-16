@@ -23,7 +23,7 @@ export default class extends React.Component {
     problems: null,
     allowLanguages: null,
     startTime: null,
-    contestParticipantsGroups: [],
+    contestParticipantsGroups: {},
     options: 4,
     data: null,
     info: "информация",
@@ -142,6 +142,13 @@ export default class extends React.Component {
       .map(lang => lang[0])
       .join(" ");
     console.log("createContest allowLanguages:", allowLanguages);
+    let idContestParticipantsGroups = this.state.participantsGroups
+      .filter(group => this.state.contestParticipantsGroups[group])
+      .map(group => group[0]);
+    console.log(
+      "createContest idContestParticipantsGroups:",
+      idContestParticipantsGroups
+    );
     const outContestsDict = {
       author: this.state.author,
       contestType: this.state.contestType,
@@ -150,7 +157,7 @@ export default class extends React.Component {
       problems,
       allowLanguages,
       startTime: this.state.date.getTime() / 1000,
-      contestParticipantsGroups: this.state.contestParticipantsGroups,
+      idContestParticipantsGroups,
       options: "4",
       info: this.state.info,
       timeDurationSec: this.state.timeDurationSec
@@ -214,18 +221,18 @@ export default class extends React.Component {
     console.log(
       "Setting the setContestParticipantsGroups with: ",
       e.target.checked,
-      e.target.id
+      e.target.name
     );
-    let contestParticipantsGroups = this.state.contestParticipantsGroups;
-    if (e.target.checked) {
-      contestParticipantsGroups.push(e.target.id);
-    } else {
-      let value = contestParticipantsGroups.indexOf(e.target.id);
-      if (value !== -1) {
-        contestParticipantsGroups.splice(value, 1);
-      }
-    }
-    this.setState({ contestParticipantsGroups });
+    const group = e.target.name;
+    const checked = e.target.checked;
+    this.setState(state => {
+      return {
+        contestParticipantsGroups: {
+          ...state.contestParticipantsGroups,
+          [group]: checked
+        }
+      };
+    });
   };
 
   getContestsDict = async courseID => {
@@ -390,18 +397,18 @@ export default class extends React.Component {
             </Label>
             <Col sm={6}>
               {this.state.participantsGroups.map(group => (
-                <InputGroup key={group}>
+                <InputGroup key={group[0]}>
                   <InputGroupAddon addonType="prepend">
                     <InputGroupText>
                       <Input
-                        id={group}
+                        name={group}
                         onChange={this.setContestParticipantsGroups}
                         addon
                         type="checkbox"
                       />
                     </InputGroupText>
                   </InputGroupAddon>
-                  <Input placeholder={group}></Input>
+                  <Input placeholder={group[1]} readOnly></Input>
                 </InputGroup>
               ))}
             </Col>
