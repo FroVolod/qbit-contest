@@ -5,7 +5,9 @@ from autobahn.asyncio.component import Component
 from autobahn.asyncio.component import run
 
 from .constants import COURSES_DICT, ALLOW_LANGUAGE
-from .tables_db import Groups, Users, Contests, session
+from .tables_db import Contests, session, \
+                        Problems, ContestProblems, \
+                        Groups, Users, UserGroup
 
 
 comp = Component()
@@ -13,6 +15,8 @@ comp = Component()
 @comp.register('com.demo.create-contest')
 async def create_contest(out_contests_dict):
     print(f'Create contest called with args:\n-- {out_contests_dict}\nSleeping for 4 seconds...')
+    
+    # запись данных в таблицу contests
     duration_time = str(out_contests_dict['timeDurationSec'])
     new_contest = Contests(
         title = out_contests_dict['contestTitle'],
@@ -26,6 +30,21 @@ async def create_contest(out_contests_dict):
     )
     session.add(new_contest)
     session.commit()
+    print(f'new_contest ID: {new_contest.contest_id}')
+
+    # запись зависимостей в таблицу contest_problems
+    contest_problems = []
+    problems = session.query(Problems).filter(Problems.problem_id.in_(out_contests_dict["problems"])).all()
+    print(f'problems: {problems} ** {out_contests_dict["problems"]}')
+    for problem in problems:
+        contest_problems.append(ContestProblems(
+            problem_id=problem.problem_id,
+            short_name='',
+            contest_id=new_contest.contest_id
+            ))
+    session.add_all(contest_problems)
+    session.commit()
+
     await asyncio.sleep(2)
     print('Create contest handler has slept for 4 seconds.')
     return 55
