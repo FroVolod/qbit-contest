@@ -15,5 +15,6 @@ Contests = Base.classes['2018_contests']
 Problems = Base.classes['2018_problems']
 ContestProblems = Base.classes['2018_contest_problems']
 UserGroup = Base.classes['2018_user_group_relationships']
+ContestUsers = Base.classes['2018_contest_users']
 
 session = Session(engine)

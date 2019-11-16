@@ -13,6 +13,7 @@ from .tables_db import (
     Groups,
     Users,
     UserGroup,
+    ContestUsers,
 )
 
 
@@ -61,6 +62,23 @@ async def create_contest(out_contests_dict):
         )
     session.add_all(contest_problems)
     session.commit()
+
+    # запись зависимостей в таблицу contest_users
+    contest_users = []
+    for group_id in out_contests_dict["idContestParticipantsGroups"]:
+        users = session.query(UserGroup).filter(UserGroup.group_id == group_id).all()
+        for user in users:
+            contest_users.append(
+                ContestUsers(
+                    contest_id=new_contest.contest_id,
+                    user_id=user.user_id,
+                    reg_status=3,
+                    reg_data="",
+                )
+            )
+    session.add_all(contest_users)
+    session.commit()
+    print("запись зависимостей в таблицу contest_users: OK")
 
     await asyncio.sleep(2)
     print("Create contest handler has slept for 4 seconds.")
