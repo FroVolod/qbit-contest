@@ -639,15 +639,15 @@ export default class extends React.Component {
 
         <style>
           {`
-                        h2 {
-                            text-align: center;
-                            margin-top: 50px;
-                            margin-bottom: 50px;
-                        }
-                        a input {
-                            cursor: pointer;
-                        }
-                    `}
+            h2 {
+                text-align: center;
+                margin-top: 50px;
+                margin-bottom: 50px;
+            }
+            a input {
+                cursor: pointer;
+            }
+          `}
         </style>
       </Form>
     );
