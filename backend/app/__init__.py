@@ -20,12 +20,7 @@ from .tables_db import (
 comp = Component()
 
 
-@comp.register("com.demo.create-contest")
-async def create_contest(out_contests_dict):
-    print(
-        f"Create contest called with args:\n-- {out_contests_dict}\nSleeping for 4 seconds..."
-    )
-
+async def to_contests(out_contests_dict):
     # запись данных в таблицу contests
     duration_time = str(out_contests_dict["timeDurationSec"])
     new_contest = Contests(
@@ -42,47 +37,61 @@ async def create_contest(out_contests_dict):
     )
     session.add(new_contest)
     session.commit()
-    print(f"new_contest ID: {new_contest.contest_id}")
+    
+    task_to_contest_problems = asyncio.create_task(to_contest_problems(out_contests_dict["problems"], new_contest.contest_id))
+    task_to_contest_users = asyncio.create_task(to_contest_users(out_contests_dict["idContestParticipantsGroups"], new_contest.contest_id))
 
+    await asyncio.gather(task_to_contest_problems, task_to_contest_users)
+
+
+async def to_contest_problems(out_problems, contest_id):
     # запись зависимостей в таблицу contest_problems
     contest_problems = []
     problems = (
         session.query(Problems)
-        .filter(Problems.problem_id.in_(out_contests_dict["problems"]))
+        .filter(Problems.problem_id.in_(out_problems))
         .all()
     )
-    print(f'problems: {problems} ** {out_contests_dict["problems"]}')
+    print(f'problems: {problems} ** {out_problems}')
     for problem in problems:
         contest_problems.append(
             ContestProblems(
                 problem_id=problem.problem_id,
                 short_name="",
-                contest_id=new_contest.contest_id,
+                contest_id=contest_id,
             )
         )
     session.add_all(contest_problems)
-    session.commit()
 
+
+async def to_contest_users(groups, contest_id):
     # запись зависимостей в таблицу contest_users
     contest_users = []
-    for group_id in out_contests_dict["idContestParticipantsGroups"]:
+    for group_id in groups:
         users = session.query(UserGroup).filter(UserGroup.group_id == group_id).all()
         for user in users:
             contest_users.append(
                 ContestUsers(
-                    contest_id=new_contest.contest_id,
+                    contest_id=contest_id,
                     user_id=user.user_id,
                     reg_status=3,
                     reg_data="",
                 )
             )
     session.add_all(contest_users)
-    session.commit()
     print("запись зависимостей в таблицу contest_users: OK")
 
+
+@comp.register("com.demo.create-contest")
+async def create_contest(out_contests_dict):
+    print(
+        f"Create contest called with args:\n-- {out_contests_dict}\nSleeping for 4 seconds..."
+    )
+    # запись данных в БД
+    await to_contests(out_contests_dict)
+    session.commit()
     await asyncio.sleep(2)
-    print("Create contest handler has slept for 4 seconds.")
-    return 55
+    return 'Contest is created'
 
 
 @comp.register("com.demo.get-participants-groups")
