@@ -7,6 +7,7 @@ import ContestForm from "../components/contest-creation-form";
 
 class Index extends React.Component {
   state = {
+    DSID: null,
     session: null,
     language: "ru"
   };
@@ -45,9 +46,10 @@ class Index extends React.Component {
     // }
 
     wamp.onopen = session => {
-      console.log("new session");
-      this.setState({ session: session });
-      console.log("open: ", session);
+      const DSID = document.cookie.match(/DSID=[^;]+/)[0].split('=')[1]
+      console.log("cookie: ", DSID);
+      this.setState({ session, DSID });
+      console.log("new session open: ", session);
     };
 
     wamp.open();
@@ -59,6 +61,7 @@ class Index extends React.Component {
   };
 
   render() {
+    if (!this.state.session) return null;
     return (
       <div>
         <div>

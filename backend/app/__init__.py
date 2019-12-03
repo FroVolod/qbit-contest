@@ -6,8 +6,9 @@ from autobahn.asyncio.component import run
 
 from .constants import COURSES_DICT, ALLOW_LANGUAGE
 from .tables_db import (
-    Contests,
     session,
+    Contests,
+    UserSessions,
     Problems,
     ContestProblems,
     Groups,
@@ -18,6 +19,21 @@ from .tables_db import (
 
 
 comp = Component()
+
+
+async def check_dsid(dsid, author_id=None):
+    print(f'Checking role for Author: {author_id}')
+    user_session = session.query(UserSessions).filter(UserSessions.session_id == dsid).first()
+    print(f'check dsid: user_session -- {user_session}')
+    if not author_id:
+        author_id = user_session.session_data.split('uid|i:')[1].split(';')[0]
+        author = session.query(Users).filter(Users.user_id == author_id).first().FIO
+        print(f'author: {author}')
+        return (author_id, author)
+    elif (author_id == user_session.session_data.split('uid|i:')[1].split(';')[0]
+        and session.query(Users).filter(Users.user_id == author_id).first().access >= 65534):
+        return author_id
+    return None
 
 
 async def to_contests(out_contests_dict):
@@ -32,7 +48,7 @@ async def to_contests(out_contests_dict):
         + duration_time
         + ';s:13:"absolute_time";i:0;}',
         info=out_contests_dict["info"],
-        author_id=out_contests_dict["author"],
+        author_id=out_contests_dict["authorId"],
         allow_languages=out_contests_dict["allowLanguages"],
     )
     session.add(new_contest)
@@ -82,26 +98,46 @@ async def to_contest_users(groups, contest_id):
     print("запись зависимостей в таблицу contest_users: OK")
 
 
+@comp.register("com.demo.get-author")
+async def get_author(dsid):
+    print(f"Getting author_id for session id {dsid}")
+    author = await check_dsid(dsid)
+    print(f"author: {author}")
+    await asyncio.sleep(2)
+    return author
+
+
 @comp.register("com.demo.create-contest")
 async def create_contest(out_contests_dict):
     print(
         f"Create contest called with args:\n-- {out_contests_dict}\nSleeping for 4 seconds..."
     )
+    # Проверка прав пользователя
+    check = await check_dsid(out_contests_dict['dsid'], out_contests_dict['authorId'])
+    print(f'create_contest: check_dsid -- {check}')
+    if not check:
+        return
     # запись данных в БД
     await to_contests(out_contests_dict)
     session.commit()
     await asyncio.sleep(2)
-    return 'Contest is created'
+    return 'Contest created'
 
 
 @comp.register("com.demo.get-participants-groups")
-async def get_contest_participants_groups(user_id):
+async def get_contest_participants_groups(dsid, user_id):
+    # Проверка прав пользователя
+    check = await check_dsid(dsid, user_id)
+    print(f'create_contest: check_dsid -- {check}')
+    if not check:
+        return
+
     print("Getting the participants groups with user:\n")
     print(session)
     print(dir(session))
     print(session.__dict__)
     print(session.is_active)
-    user = session.query(Users).filter(Users.user_id == int(user_id)).first()
+    user = session.query(Users).filter(Users.user_id == user_id).first()
     print(f"-- {user.nickname}")
     await asyncio.sleep(2)
     groups = [
@@ -113,7 +149,13 @@ async def get_contest_participants_groups(user_id):
 
 
 @comp.register("com.demo.get-contests-dictionaries")
-async def get_contests_dictionaries(course_id, lang):
+async def get_contests_dictionaries(dsid, user_id, course_id, lang):
+    # Проверка прав пользователя
+    check = await check_dsid(dsid, user_id)
+    print(f'create_contest: check_dsid -- {check}')
+    if not check:
+        return
+    
     print(
         f"Getting the titles of the contests with args:\n-- course: {course_id}\n-- language: {lang}\nSleeping for 4 seconds..."
     )
@@ -141,7 +183,13 @@ async def get_contests_dictionaries(course_id, lang):
 
 
 @comp.register("com.demo.get-titles-courses")
-async def get_titles_courses(lang):
+async def get_titles_courses(dsid, user_id, lang):
+    # Проверка прав пользователя
+    check = await check_dsid(dsid, user_id)
+    print(f'create_contest: check_dsid -- {check}')
+    if not check:
+        return
+    
     print(
         f"Getting the titles of the cuorses with language: {lang}:\nSleeping for 4 seconds..."
     )

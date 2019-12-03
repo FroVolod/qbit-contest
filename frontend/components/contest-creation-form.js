@@ -14,9 +14,13 @@ import {
 import DatePicker from "react-datepicker"; //https://github.com/Hacker0x01/react-datepicker
 import "react-datepicker/dist/react-datepicker.css";
 
+import Modal from "./modal";
+
+
 export default class extends React.Component {
   state = {
-    author: 1007,
+    authorId: null,
+    author: null,
     contestType: "otbor",
     courseTitle: null,
     contestTitle: null,
@@ -40,38 +44,43 @@ export default class extends React.Component {
       days: [86400, "дни", "днях"]
     },
     periodDuration: "minutes",
-    timeDurationSec: null
+    timeDurationSec: null,
+    showModal: false,
+    messageModal: null
   };
 
   componentDidMount() {
-    console.log("DIDMount open");
-    if (!this.props.state.session) return;
-    this.getParticipantsGroups(this.state.author)
-      .then(participantsGroups => {
-        this.setState({
-          participantsGroups,
-          showParticipantsGroupsSpinner: false
-        });
-      })
-      .catch(e =>
+    console.log("DIDMount open", this.props.state.session, this.props.state.DSID);
+    this.getAuthor(this.props.state.DSID)
+      .then(author => 
+        this.getParticipantsGroups(author[0])
+          .then(participantsGroups => {
+            this.setState({
+              authorId: author[0],
+              author: author[1],
+              participantsGroups,
+              showParticipantsGroupsSpinner: false
+            });
+          })
+          .catch(e =>
+            console.log(
+              "componentDidMount: setting the contestParticipans error -- ",
+              e
+            )
+          )
+        )
+      .catch(e => 
         console.log(
-          "componentDidMount: setting the contestParticipans error -- ",
+          "componentDidMount: setting the Author error -- ",
           e
         )
       );
-    this.getTitlesCourses()
-      .then(courses =>
-        console.log("DIDMount getTitlesCourses response: ", courses)
-      )
-      .catch(e => console.log("DIDMount getTitlesCourses error:", e));
   }
 
   componentDidUpdate(nextProps) {
     console.log(
-      "DidUpdate open",
-      this.state.courses,
-      "language: ",
-      this.props.state.language
+      "DidUpdate open", this.state.courses,
+      "language: ", this.props.state.language
     );
     if (!this.props.state.session) return;
     console.log("this.state.courses", this.state.courses);
@@ -85,23 +94,21 @@ export default class extends React.Component {
     this.getTitlesCourses()
       .then(courses => {
         console.log("DidUpdate getTitlesCourses response: ", courses);
+        this.getContestsDict(courses[0].course_id);
         if (courses === this.state.courses) return;
         this.setState({ courses });
       })
       .catch(e => console.log("DidUpdate getTitlesCourses error:", e));
     console.log("DidUpdate: Loading the titles of the courses ...");
     console.log(
-      "DidUpdate exit",
-      this.state.courses,
-      "session: ",
-      this.props.state.language
+      "DidUpdate exit", this.state.courses,
+      "language: ", this.props.state.language
     );
     if (this.state.contestParticipansGroup && this.props === nextProps) return;
-    this.getParticipantsGroups(this.state.author)
+    this.getParticipantsGroups(this.state.authorId)
       .then(participantsGroups => {
         console.log(
-          "DidUpdate getParticipantsGroups response: ",
-          participantsGroups
+          "DidUpdate getParticipantsGroups response: ", participantsGroups
         );
         if (participantsGroups === this.state.participantsGroups) return;
         console.log(
@@ -131,7 +138,25 @@ export default class extends React.Component {
       .catch(e => console.log("DidUpdate getAllowLanguage error:", e));
   }
 
+  getAuthor = async (dsid) => {
+    console.log('Getting Author with cookie: ', dsid)
+    const author = await this.props.state.session.call("com.demo.get-author", [dsid])
+    return author
+  } 
+
   createContest = async () => {
+    if (Object.keys(this.state.contestParticipantsGroups).length === 0) {
+      this.isShowModal(true, 'Необходимо выбрать участников турнира')
+      return
+    }
+    if (!this.state.timeDurationSec) {
+      this.isShowModal(true, 'Необходимо ввести значение продолжительности турнира')
+      return
+    }
+    if ((this.state.date - new Date()) < 0) {
+      this.isShowModal(true, 'Необходимо указать начало турнира')
+      return
+    }
     console.log('On click "Create contest"');
     let problems = this.state.problems.filter(
       x => this.state.problemsEnabled[x]
@@ -150,7 +175,8 @@ export default class extends React.Component {
       idContestParticipantsGroups
     );
     const outContestsDict = {
-      author: this.state.author,
+      authorId: this.state.authorId,
+      dsid: this.props.state.DSID,
       contestType: this.state.contestType,
       courseTitle: this.state.courseTitle,
       contestTitle: this.state.contestTitle,
@@ -162,11 +188,23 @@ export default class extends React.Component {
       info: this.state.info,
       timeDurationSec: this.state.timeDurationSec
     };
-    const res = await this.props.state.session.call("com.demo.create-contest", [
+    const isCreated = await this.props.state.session.call("com.demo.create-contest", [
       outContestsDict
     ]);
-    console.log("res: ", res);
+    console.log("isCreated: ", isCreated);
+    if (isCreated) {
+      console.log("createContest open isShowModal")
+      this.isShowModal(true, 'Турнир успешно создан')
+    }
+    else {
+      this.isShowModal(true, 'У Вас недостаточно прав для создания турнира')
+    };
   };
+
+  isShowModal = (showModal, messageModal=null) => {
+    console.log("isShowModal: ", showModal)
+    this.setState({ showModal, messageModal })
+  }
 
   getAllowLanguage = async () => {
     console.log("Getting allow language ...");
@@ -182,38 +220,13 @@ export default class extends React.Component {
     this.getContestsDict(e.target.value);
   };
 
-  onAuthorChange = e => {
-    console.log("Setting the ContestParticipantsGroups with: ", e.target.value);
-    this.setState({ showParticipantsGroupsSpinner: true });
-    this.getParticipantsGroups(e.target.value)
-      .then(participantsGroups =>
-        this.setState({
-          participantsGroups,
-          showParticipantsGroupsSpinner: false
-        })
-      )
-      .catch(e =>
-        console.log(
-          "onAuthorChange: setting the contestParticipans error -- ",
-          e
-        )
-      );
-  };
-
-  setAuthor = author => {
-    this.setState({ author });
-  };
-
-  getParticipantsGroups = async author => {
-    console.log("getParticipantsGroups value: ", author);
+  getParticipantsGroups = async authorId => {
+    console.log("getParticipantsGroups value: ", authorId);
     const participantsGroups = await this.props.state.session.call(
       "com.demo.get-participants-groups",
-      [author]
+      [this.props.state.DSID, authorId]
     );
     console.log("participantsGroups", participantsGroups);
-    if (author !== this.state.author) {
-      this.setAuthor(author);
-    }
     return participantsGroups;
   };
 
@@ -239,7 +252,7 @@ export default class extends React.Component {
     console.log("Getting the titles of the contests with courseID: ", courseID);
     const contestsDict = await this.props.state.session.call(
       "com.demo.get-contests-dictionaries",
-      [courseID, this.props.state.language]
+      [this.props.state.DSID, this.state.authorId, courseID, this.props.state.language]
     );
     console.log("contestsDicts: ", contestsDict);
     if (contestsDict && contestsDict === this.state.contestsDict) return;
@@ -257,7 +270,7 @@ export default class extends React.Component {
     console.log("Getting the problems of the contest: ", contest);
     console.log("*** contestsDict: ", this.state.contestsDict);
     const item = this.state.contestsDict.find(
-      item => item.contest_title == contest
+      item => item.contest_title === contest
     );
     const problemsEnabled = {};
     const problems = item.problems;
@@ -328,10 +341,9 @@ export default class extends React.Component {
     console.log("Getting the titles of the courses");
     const courses = await this.props.state.session.call(
       "com.demo.get-titles-courses",
-      [this.props.state.language]
+      [this.props.state.DSID, this.state.authorId, this.props.state.language]
     );
     console.log("getTitlesCourses *courses: ", courses);
-    this.getContestsDict(courses[0].course_id);
     return courses;
   };
 
@@ -379,15 +391,7 @@ export default class extends React.Component {
             Автор
           </Label>
           <Col sm={6}>
-            <Input
-              type="textarea"
-              name="text"
-              id="author_id"
-              placeholder={this.state.author}
-              onBlur={this.onAuthorChange}
-            >
-              {this.state.author}
-            </Input>
+            <Input placeholder={this.state.author} readOnly></Input>
           </Col>
         </FormGroup>
         {!this.state.participantsGroups ? null : (
@@ -585,10 +589,11 @@ export default class extends React.Component {
         </FormGroup>
         <FormGroup row>
           <Label sm={2} for="start_time">
-            Начало турнира
+            Начало турнира 
           </Label>
           <Col>
             <DatePicker
+              className="pointer"
               selected={this.state.date}
               onChange={e => this.setState({ date: e })}
               showTimeSelect
@@ -599,7 +604,7 @@ export default class extends React.Component {
         </FormGroup>
         <FormGroup row>
           <Label sm={2} for="data">
-            Длительность турнира
+            Продолжительность турнира
           </Label>
           <Col sm={6}>
             <InputGroup>
@@ -623,7 +628,7 @@ export default class extends React.Component {
                     addon
                   >
                     {Object.entries(this.state.contestDuration).map(item => (
-                      <option value={item[0]}>{item[1][1]}</option>
+                      <option key={item[0]} value={item[0]}>{item[1][1]}</option>
                     ))}
                   </Input>
                 </InputGroupText>
@@ -636,6 +641,11 @@ export default class extends React.Component {
             <Button onClick={this.createContest}>Создать турнир</Button>
           </Col>
         </FormGroup>
+        <Modal
+          showModal={this.state.showModal}
+          isShowModal={this.isShowModal}
+          messageModal={this.state.messageModal}
+        />
 
         <style>
           {`
@@ -644,7 +654,7 @@ export default class extends React.Component {
                 margin-top: 50px;
                 margin-bottom: 50px;
             }
-            a input {
+            a input, .pointer {
                 cursor: pointer;
             }
           `}
