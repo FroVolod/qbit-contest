@@ -62,6 +62,7 @@ async def to_contests(out_contests_dict):
 
 async def to_contest_problems(out_problems, contest_id):
     # запись зависимостей в таблицу contest_problems
+    out_problems = [problem[0] for problem in out_problems]
     contest_problems = []
     problems = (
         session.query(Problems)
@@ -171,7 +172,16 @@ async def get_contests_dictionaries(dsid, user_id, course_id, lang):
                 if type(value) is dict:
                     contest_dict[key] = value[lang]
                 else:
-                    contest_dict[key] = value
+                    if key == 'problems':
+                        problems_list = []
+                        problems = [p.problem_id for p in session.query(Problems).all()]
+                        for problem in value:
+                            if int(problem) in problems:
+                                title = session.query(Problems).get({'problem_id': problem}).title
+                                problems_list.append((problem, title))
+                        contest_dict[key] = problems_list
+                    else:
+                        contest_dict[key] = value
             print("contest_dict", contest_dict)
             contests_dicts.append(contest_dict)
         except KeyError as error:

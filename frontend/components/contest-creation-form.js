@@ -526,7 +526,7 @@ export default class extends React.Component {
                     </InputGroupText>
                   </InputGroupAddon>
                   <a href="" target="_blank">
-                    <Input defaultValue={problem}></Input>
+                    <Input defaultValue={problem[1]}></Input>
                   </a>
                 </InputGroup>
               ))}
