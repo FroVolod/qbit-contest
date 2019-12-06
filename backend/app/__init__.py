@@ -70,14 +70,17 @@ async def to_contest_problems(out_problems, contest_id):
         .all()
     )
     print(f'problems: {problems} ** {out_problems}')
+    short_name = 'ABCDEFGHIJKLMN'
+    i = 0
     for problem in problems:
         contest_problems.append(
             ContestProblems(
                 problem_id=problem.problem_id,
-                short_name="",
+                short_name=short_name[i],
                 contest_id=contest_id,
             )
         )
+        i += 1
     session.add_all(contest_problems)
 
 
